@@ -1,8 +1,24 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Auth from "./pages/Auth/Auth"; // ⚠️ esta ruta debe coincidir
+import ProtectedRoute from "./components/ProtectedRoute";
+
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-2xl font-bold">
-      ¡Tailwind está funcionando!
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Auth />} />
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
