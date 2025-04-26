@@ -1,12 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import logo from "../../assets/logo-2.png";
-import { useAuth } from "../../context/AuthContext";
+import { auth } from "../../firebase"; // ← Agregado
+import { onAuthStateChanged } from "firebase/auth"; // ← Agregado
 
 export default function Auth() {
-  const { user, loading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [user, setUser] = useState(null);         // ← Agregado
+  const [loading, setLoading] = useState(true);    // ← Agregado
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        console.log("✅ Usuario autenticado:", currentUser);
+        setUser(currentUser);
+      } else {
+        console.log("🚪 Usuario no autenticado");
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe(); // ← Limpieza
+  }, []);
 
   if (loading) {
     return (
@@ -36,8 +53,6 @@ export default function Auth() {
       {/* Columna derecha (formulario dentro de card blanca) */}
       <div className="w-full md:w-[40%] flex items-center justify-center px-4 md:px-2 py-6">
         <div className="w-full max-w-sm bg-white text-gray-800 rounded-xl shadow-lg p-6">
-          
-
           {isLogin ? <LoginForm /> : <RegisterForm />}
 
           <div className="text-center mt-6 text-sm text-gray-600">

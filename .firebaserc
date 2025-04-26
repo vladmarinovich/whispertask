@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "whispertask-hosting"
-  }
+    "default": "whispertask-hosting",
+    "whispertask": "whispertask-hosting"
+  },
+  "targets": {},
+  "etags": {}
 }

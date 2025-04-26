@@ -1,14 +1,21 @@
 import React, { useState, useRef } from "react";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { saveAudioToFirestore } from "../utils/firestoreHelpers";
+import { useAuth } from "../../context/AuthContext"; // Asegúrate de tener el contexto de autenticación
+import { addDoc, collection } from "firebase/firestore"; // Para agregar metadatos en Firestore
+import { db } from "../../firebase"; // Asegúrate de tener configurado correctamente Firestore
 
 export default function AudioRecorder() {
+  const { user } = useAuth(); // Obtener el usuario desde el contexto
   const [isRecording, setIsRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState(null);
   const [audioBlob, setAudioBlob] = useState(null);
-  const chunks = useRef([]);
+  const [audioURL, setAudioURL] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [message, setMessage] = useState(""); // Estado para mostrar mensaje
   const mediaRecorderRef = useRef(null);
+  const chunks = useRef([]);
+  const mediaStreamRef = useRef(null); // Para gestionar la captura de la pantalla
 
+  // Iniciar la grabación de audio y pantalla
   const startRecording = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -16,62 +23,100 @@ export default function AudioRecorder() {
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Solicitar acceso al micrófono y la pantalla
+      const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
 
-      chunks.current = [];
+      const audioContext = new AudioContext();
+      const destination = audioContext.createMediaStreamDestination();
+
+      // Conectar la fuente de audio del micrófono y pantalla
+      const micSource = audioContext.createMediaStreamSource(micStream);
+      const screenSource = audioContext.createMediaStreamSource(screenStream);
+
+      micSource.connect(destination);
+      screenSource.connect(destination);
+
+      const combinedStream = destination.stream;
+
+      // Crear MediaRecorder para grabar el audio combinado
+      const mediaRecorder = new MediaRecorder(combinedStream);
       mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start();
-      setIsRecording(true);
+      mediaStreamRef.current = screenStream; // Guardamos la referencia del stream de pantalla
 
-      mediaRecorder.ondataavailable = (e) => {
-        chunks.current.push(e.data);
+      chunks.current = []; // Limpiar fragmentos anteriores
+      mediaRecorder.start();
+      setIsRecording(true); // Indicamos que la grabación está activa
+
+      mediaRecorder.ondataavailable = (event) => {
+        chunks.current.push(event.data); // Recopilar los datos de audio
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
-        setAudioBlob(blob);
-        setAudioURL(url);
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(chunks.current, { type: "audio/wav" });
+        const audioURL = URL.createObjectURL(audioBlob);
+        setAudioBlob(audioBlob); // Guardamos el audio grabado
+        setAudioURL(audioURL); // Establecemos el enlace para reproducir el audio
         setIsRecording(false);
+
+        // Subir a Firebase Storage
+        const storage = getStorage();
+        const fileName = `grabaciones/${Date.now()}_audio.wav`; // Nombre único para cada archivo
+        const storageRef = ref(storage, fileName);
+        const uploadTask = uploadBytesResumable(storageRef, audioBlob);
+
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setProgress(pct); // Mostrar el progreso de carga
+          },
+          (error) => {
+            console.error("❌ Error al subir archivo:", error);
+            setMessage("❌ Error al subir archivo");
+          },
+          async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+            // Guardar los metadatos en Firestore
+            try {
+              await addDoc(collection(db, "audios"), {
+                uid: user.uid, // Guardamos el UID del usuario
+                fileName: fileName,
+                url: downloadURL,
+                createdAt: new Date(),
+                type: "grabado",
+              });
+              setMessage("✅ ¡Grabación subida correctamente!");
+            } catch (error) {
+              console.error("❌ Error al guardar los metadatos en Firestore:", error);
+              setMessage("❌ Error al guardar los metadatos.");
+            }
+
+            setProgress(0);
+            setAudioBlob(null);
+            setAudioURL(null);
+          }
+        );
       };
     } catch (err) {
-      console.error("❌ Error al iniciar grabación:", err);
+      console.error("Error al acceder al micrófono o pantalla:", err);
       alert("⚠️ Ocurrió un error al acceder al micrófono.");
       setIsRecording(false);
     }
   };
 
+  // Detener la grabación
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-  };
+      mediaRecorderRef.current.stop(); // Detener la grabación de audio
+      setIsRecording(false);
 
-  const handleUpload = async () => {
-    if (!audioBlob) return;
-
-    const storage = getStorage();
-    const fileName = `grabaciones/${Date.now()}.webm`;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, audioBlob);
-
-    uploadTask.on(
-      "state_changed",
-      null,
-      (error) => console.error("❌ Error al subir:", error),
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        await saveAudioToFirestore({
-          fileName,
-          url: downloadURL,
-          type: "grabado",
-        });
-        alert("✅ Grabación subida correctamente.");
-        setAudioBlob(null);
-        setAudioURL(null);
+      // Detener la grabación de la pantalla
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       }
-    );
+    }
   };
 
   return (
@@ -94,6 +139,8 @@ export default function AudioRecorder() {
         </button>
       )}
 
+      {progress > 0 && <div className="mt-2 text-sm">Progreso de subida: {progress}%</div>}
+
       {audioURL && (
         <div className="mt-4">
           <audio controls src={audioURL} className="w-full" />
@@ -105,6 +152,8 @@ export default function AudioRecorder() {
           </button>
         </div>
       )}
+
+      {message && <div className="mt-2 text-sm">{message}</div>}
     </div>
   );
 }
