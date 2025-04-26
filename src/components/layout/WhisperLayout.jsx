@@ -1,6 +1,6 @@
 // ✅ src/components/layout/WhisperLayout.jsx
 import UploadAudio from "../UploadAudio";
-import AudioRecord from "../AudioRecord";  // Ruta relativa al archivo
+import AudioRecorder from "../AudioRecorder";
 import AudioList from "./AudioList";
 import AssistantPanel from "./AssistantPanel";
 import SummaryTab from "./tabs/SummaryTab";

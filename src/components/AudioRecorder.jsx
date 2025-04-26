@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { useAuth } from "../../context/AuthContext"; // Asegúrate de tener el contexto de autenticación
-import { addDoc, collection } from "firebase/firestore"; // Para agregar metadatos en Firestore
-import { db } from "../../firebase"; // Asegúrate de tener configurado correctamente Firestore
+import { useAuth } from "../context/AuthContext"; // Asegúrate de que la ruta es correcta
+import { addDoc, collection } from "firebase/firestore"; // Para agregar los metadatos en Firestore
+import { db } from "../../firebase"; // Asegúrate de que la configuración de Firebase esté correcta
 
 export default function AudioRecorder() {
   const { user } = useAuth(); // Obtener el usuario desde el contexto

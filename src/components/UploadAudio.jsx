@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { useAuth } from "../../context/AuthContext"; // Asegúrate de tener el contexto de autenticación
+import { useAuth } from "../context/AuthContext";  // Asegúrate de que la ruta es correcta
 import { addDoc, collection } from "firebase/firestore"; // Para agregar metadatos en Firestore
-import { db } from "../../firebase"; // Asegúrate de tener configurado correctamente Firestore
+import * as firebase from "../firebase"; // Asegúrate de que la configuración de Firebase esté correcta
 
 export default function UploadAudio() {
   const { user } = useAuth(); // Obtener el usuario desde el contexto
@@ -42,11 +42,11 @@ export default function UploadAudio() {
       },
       async () => {
         // Obtener la URL del archivo subido
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref());
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
         // Guardar los metadatos del archivo en Firestore
         try {
-          await addDoc(collection(db, "audios"), {
+          await addDoc(collection(firebase.db, "audios"), {
             uid: user.uid, // Guardamos el UID del usuario
             fileName: audioFile.name,
             url: downloadURL,
