@@ -1,30 +1,32 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { auth } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+// src/context/AuthContext.jsx
+
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { getAuth, signOut } from "firebase/auth"; // Importar la función para cerrar sesión
 
 const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // 👈 Evita render antes de saber si hay usuario
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser);
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
+  const logout = () => {
+    const auth = getAuth();
+    return signOut(auth); // Aquí se cierra la sesión del usuario
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// Hook personalizado para usar el contexto
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

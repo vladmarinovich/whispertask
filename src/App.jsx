@@ -1,25 +1,14 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Auth from "./pages/Auth/Auth"; // ⚠️ esta ruta debe coincidir
-import ProtectedRoute from "./components/ProtectedRoute";
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import MainLayout from './components/layout/MainLayout';
+import WhisperLayout from './components/layout/WhisperLayout';
 
-function App() {
+export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Auth />} />
-        <Route
-          path="/home"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<MainLayout />} />
+        <Route path="/home" element={<WhisperLayout />} />
       </Routes>
     </Router>
   );
 }
-
-export default App;

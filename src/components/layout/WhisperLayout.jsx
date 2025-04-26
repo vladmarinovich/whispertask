@@ -1,21 +1,25 @@
-import React, { useState } from "react";
-import Sidebar from "./Sidebar";
-import HomeMain from "./HomeMain";
-import AssistantPanel from "./AssistantPanel";
+import { Route, Routes } from 'react-router-dom';
+import AgendaTab from './tabs/AgendaTab';
+import HistoryTab from './tabs/HistoryTab';
+import SettingsTab from './tabs/SettingsTab';
+import SummaryTab from './tabs/SummaryTab';
+import TranscriptionTab from './tabs/TranscriptionTab';
 
 export default function WhisperLayout() {
-  const [activeTab, setActiveTab] = useState("transcript"); // "transcript" | "summary"
-
   return (
-    <div className="h-screen w-screen flex bg-gray-100">
-      {/* Sidebar izquierda */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="whisper-layout">
+      {/* Aquí va el sidebar que ya tienes */}
 
-      {/* Contenido central */}
-      <HomeMain activeTab={activeTab} />
-
-      {/* Asistente IA */}
-      <AssistantPanel />
+      {/* Div que cambia según el tab */}
+      <main className="flex-1">
+        <Routes>
+          <Route path="/agenda" element={<AgendaTab />} />
+          <Route path="/history" element={<HistoryTab />} />
+          <Route path="/settings" element={<SettingsTab />} />
+          <Route path="/summary" element={<SummaryTab />} />
+          <Route path="/transcription" element={<TranscriptionTab />} />
+        </Routes>
+      </main>
     </div>
   );
 }
