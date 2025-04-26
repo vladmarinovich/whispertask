@@ -1,4 +1,3 @@
-// ✅ src/components/layout/MainLayout.jsx
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import WhisperLayout from "./WhisperLayout";

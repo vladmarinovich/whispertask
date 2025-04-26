@@ -1,110 +1,54 @@
-import React, { useState, useRef } from "react";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { saveAudioToFirestore } from "../utils/firestoreHelpers";
+import { useState } from "react";
 
 export default function AudioRecorder() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState(null);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const chunks = useRef([]);
-  const mediaRecorderRef = useRef(null);
+  const [grabando, setGrabando] = useState(false);
 
-  const startRecording = async () => {
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Tu navegador no soporta grabación de audio.");
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-
-      chunks.current = [];
-      mediaRecorderRef.current = mediaRecorder;
-      mediaRecorder.start();
-      setIsRecording(true);
-
-      mediaRecorder.ondataavailable = (e) => {
-        chunks.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
-        setAudioBlob(blob);
-        setAudioURL(url);
-        setIsRecording(false);
-      };
-    } catch (err) {
-      console.error("❌ Error al iniciar grabación:", err);
-      alert("⚠️ Ocurrió un error al acceder al micrófono.");
-      setIsRecording(false);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!audioBlob) return;
-
-    const storage = getStorage();
-    const fileName = `grabaciones/${Date.now()}.webm`;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, audioBlob);
-
-    uploadTask.on(
-      "state_changed",
-      null,
-      (error) => console.error("❌ Error al subir:", error),
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        await saveAudioToFirestore({
-          fileName,
-          url: downloadURL,
-          type: "grabado",
-        });
-        alert("✅ Grabación subida correctamente.");
-        setAudioBlob(null);
-        setAudioURL(null);
-      }
-    );
+  const toggleGrabar = () => {
+    setGrabando(!grabando);
   };
 
   return (
-    <div className="p-4 bg-white border border-gray-200 rounded-md mt-6">
-      <h3 className="text-lg font-semibold mb-2 text-gray-800">Grabar audio desde el navegador</h3>
+    <div className="bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col gap-4">
 
-      {!isRecording ? (
-        <button
-          onClick={startRecording}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-        >
-          🎙️ Comenzar grabación
-        </button>
-      ) : (
-        <button
-          onClick={stopRecording}
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-        >
-          ⏹️ Detener grabación
-        </button>
-      )}
+      {/* Título FUERA de la caja */}
+      <h3 className="text-xl font-semibold text-gray-800">
+        Grabar audio desde el navegador
+      </h3>
 
-      {audioURL && (
-        <div className="mt-4">
-          <audio controls src={audioURL} className="w-full" />
-          <button
-            onClick={handleUpload}
-            className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            ⬆️ Subir grabación
-          </button>
+      {/* Caja de grabación */}
+      <div className="flex flex-col items-start gap-6 border-2 border-dashed border-gray-300 rounded-lg p-6 w-full">
+
+        {/* Estado de micrófono y webcam */}
+        <div className="flex flex-col gap-4 w-full">
+          {/* Micrófono activo */}
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-[#4A9FFF] rounded-full"></div>
+            <span className="text-gray-700 text-sm">Micrófono activado</span>
+          </div>
+
+          {/* Webcam no utilizada */}
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+            <span className="text-gray-500 text-sm">Webcam no utilizada</span>
+          </div>
         </div>
-      )}
+
+        {/* Botón de grabar */}
+        <button
+          onClick={toggleGrabar}
+          className={`w-full bg-[#4A9FFF] hover:bg-[#3787E0] text-white font-semibold py-3 rounded-full text-lg transition-colors ${
+            grabando ? "animate-pulse" : ""
+          }`}
+        >
+          {grabando ? "Detener Grabación" : "Comenzar Grabación"}
+        </button>
+
+        {/* Nota al pie */}
+        <p className="text-xs text-gray-400 text-center w-full">
+          * Se solicitarán permisos para acceder al micrófono.
+        </p>
+
+      </div>
     </div>
   );
 }

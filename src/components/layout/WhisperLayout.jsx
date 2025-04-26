@@ -1,25 +1,22 @@
-import { Route, Routes } from 'react-router-dom';
+import HomeMain from './tabs/HomeMain';
 import AgendaTab from './tabs/AgendaTab';
 import HistoryTab from './tabs/HistoryTab';
 import SettingsTab from './tabs/SettingsTab';
 import SummaryTab from './tabs/SummaryTab';
 import TranscriptionTab from './tabs/TranscriptionTab';
 
-export default function WhisperLayout() {
+export default function WhisperLayout({ activeTab }) {
   return (
-    <div className="whisper-layout">
-      {/* Aquí va el sidebar que ya tienes */}
-
-      {/* Div que cambia según el tab */}
-      <main className="flex-1">
-        <Routes>
-          <Route path="/agenda" element={<AgendaTab />} />
-          <Route path="/history" element={<HistoryTab />} />
-          <Route path="/settings" element={<SettingsTab />} />
-          <Route path="/summary" element={<SummaryTab />} />
-          <Route path="/transcription" element={<TranscriptionTab />} />
-        </Routes>
-      </main>
+    <div className="flex flex-col flex-1 h-full w-full overflow-hidden bg-white">
+      {/* Aquí puedes dejar el padding general si quieres */}
+      <div className="flex-1 overflow-auto p-6">
+        {activeTab === 'home' && <HomeMain />}
+        {activeTab === 'agenda' && <AgendaTab />}
+        {activeTab === 'history' && <HistoryTab />}
+        {activeTab === 'settings' && <SettingsTab />}
+        {activeTab === 'summary' && <SummaryTab />}
+        {activeTab === 'transcription' && <TranscriptionTab />}
+      </div>
     </div>
   );
 }

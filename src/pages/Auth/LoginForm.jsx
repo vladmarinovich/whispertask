@@ -1,11 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { auth, provider } from "../../firebase";
-import {
-  signInWithEmailAndPassword,
-  signInWithPopup,
-} from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, onAuthStateChanged } from "firebase/auth";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -13,15 +10,27 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Verificar si el usuario ya está autenticado
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("Usuario autenticado:", user);
+        navigate("/home"); // Redirige si ya está autenticado
+      }
+    });
+
+    return () => unsubscribe(); // Limpiar suscripción
+  }, [navigate]);
+
   // Login con email y contraseña
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError(""); // Limpiar errores anteriores
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log("Sesión iniciada correctamente");
-      navigate("/home");
+      navigate("/home"); // Redirige a home después de login
     } catch (err) {
       console.error(err);
       setError("Correo o contraseña incorrectos.");
@@ -31,11 +40,16 @@ export default function LoginForm() {
   // Login con Google
   const handleGoogleLogin = async () => {
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;  // Aquí obtenemos los datos del usuario logueado
+
       console.log("Inicio de sesión con Google exitoso");
-      navigate("/home");
-    } catch (error) {
-      console.error("Error con Google login:", error);
+      console.log("Usuario autenticado:", user);
+
+      // Ahora redirigimos a home después de un inicio de sesión exitoso
+      navigate("/home"); // Redirige al home
+    } catch (err) {
+      console.error("Error con Google login:", err);
       setError("Error al iniciar sesión con Google.");
     }
   };

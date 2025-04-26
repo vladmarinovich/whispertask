@@ -1,20 +1,19 @@
-// src/components/layout/sidebar/UserCard.jsx
 import { getAuth, signOut } from "firebase/auth";
 import { app } from "../../../firebase"; // Asegúrate de que esta ruta es correcta
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext"; // Usamos el contexto para obtener al usuario
 import { ChevronDown, LogOut, Settings } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function UserCard() {
-  const { user } = useAuth();
+  const { usuario } = useAuth(); // Usamos el contexto para obtener el usuario autenticado
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const avatar = user?.photoURL || "https://cdn-icons-png.flaticon.com/512/9131/9131529.png";
-  const name = user?.displayName || "Usuario invitado";
-  const email = user?.email || "correo@ejemplo.com";
+  const avatar = usuario?.photoURL || "https://cdn-icons-png.flaticon.com/512/9131/9131529.png"; // Usa el avatar del usuario
+  const name = usuario?.displayName || "Usuario invitado"; // Usa el nombre del usuario
+  const email = usuario?.email || "correo@ejemplo.com"; // Usa el correo del usuario
 
   const handleLogout = async () => {
     const auth = getAuth(app);

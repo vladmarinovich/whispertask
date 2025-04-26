@@ -1,32 +1,36 @@
-// src/context/AuthContext.jsx
+import React, { createContext, useState, useEffect, useContext } from "react";
+import { auth } from "../firebase"; // Asegúrate de que esta ruta es correcta
+import { onAuthStateChanged } from "firebase/auth";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { getAuth, signOut } from "firebase/auth"; // Importar la función para cerrar sesión
+// Creamos el contexto de autenticación
+export const AuthContext = createContext();
 
-const AuthContext = createContext();
+// Exportamos el hook `useAuth` para consumir el contexto más fácilmente
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [usuario, setUsuario] = useState(null);
 
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUsuario({
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL, // Asegúrate de incluir el avatar
+        });
+      } else {
+        setUsuario(null); // Si no hay usuario, lo limpiamos
+      }
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // Limpiar la suscripción al desmontar el componente
   }, []);
 
-  const logout = () => {
-    const auth = getAuth();
-    return signOut(auth); // Aquí se cierra la sesión del usuario
-  };
-
   return (
-    <AuthContext.Provider value={{ user, logout }}>
+    <AuthContext.Provider value={{ usuario }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);
