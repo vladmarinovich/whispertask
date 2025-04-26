@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
-import { db } from "../../firebase"; // asegúrate que esta ruta es correcta
-import { useAuth } from "../../context/AuthContext"; // usa tu contexto
+import { db } from "../../firebase"; // Asegúrate que esta ruta es correcta
+import { useAuth } from "../../context/AuthContext"; // Usa tu contexto de autenticación
 
 export default function AudioList() {
-  const { user, loading } = useAuth();
-  const [audios, setAudios] = useState([]);
-  const [error, setError] = useState(null);
+  const { user, loading } = useAuth(); // Obtener el usuario desde el contexto
+  const [audios, setAudios] = useState([]); // Lista de audios
+  const [error, setError] = useState(null); // Error
+  const [showMore, setShowMore] = useState(false); // Estado para controlar si mostrar más audios
+  const [allAudios, setAllAudios] = useState([]); // Estado para almacenar todas las grabaciones
 
   useEffect(() => {
     if (loading) return; // Esperar a que Firebase termine de autenticar
@@ -31,7 +33,8 @@ export default function AudioList() {
             id: doc.id,
             ...doc.data(),
           }));
-          setAudios(data);
+          setAllAudios(data); // Guardar todas las grabaciones
+          setAudios(data.slice(0, 3)); // Mostrar solo las primeras 3 grabaciones
         },
         (err) => {
           console.error("❌ Error al escuchar Firestore:", err);
@@ -46,13 +49,18 @@ export default function AudioList() {
     }
   }, [user, loading]);
 
+  const loadMore = () => {
+    setShowMore(true);
+    setAudios(allAudios); // Mostrar todas las grabaciones
+  };
+
   if (loading) {
     return <p className="text-sm text-gray-500 italic">⏳ Cargando sesión de usuario...</p>;
   }
 
   return (
     <div className="mt-6">
-      <h3 className="text-lg font-semibold mb-3 text-gray-800">Tus Reuniones</h3>
+      <h3 className="text-lg font-semibold mb-3 text-gray-800">Tus Grabaciones</h3>
 
       {error && (
         <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3 mb-4">
@@ -107,6 +115,17 @@ export default function AudioList() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showMore && audios.length < allAudios.length && (
+        <div className="text-center mt-4">
+          <button
+            onClick={loadMore}
+            className="bg-[#4A9FFF] text-white px-4 py-2 rounded hover:bg-[#326DFF]"
+          >
+            Cargar más grabaciones
+          </button>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
-import React from "react";
-import WhisperLayout from "../components/layout/WhisperLayout";
+// ✅ src/pages/Home.jsx
+import MainLayout from "../components/layout/MainLayout";
 
 export default function Home() {
-  return <WhisperLayout />;
+  return <MainLayout />;
 }
